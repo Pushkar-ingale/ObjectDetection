@@ -1,30 +1,22 @@
 import cv2
-import numpy as np
 
-# Load the pre-trained SSD model for object detection
-net = cv2.dnn.readNetFromTensorflow('frozen_inference_graph.pb', 'ssd_mobilenet_v2_coco.pbtxt')
+# Load the pre-trained Haar Cascade classifier for face detection
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-# Function to perform object detection on an image
-def detect_objects(image):
-    # Resize the image to a fixed size (300x300) for SSD model
-    blob = cv2.dnn.blobFromImage(image, size=(300, 300), swapRB=True, crop=False)
-
-    # Set the input for the network
-    net.setInput(blob)
-
-    # Run forward pass to perform object detection
-    detections = net.forward()
-
-    # Loop over the detections and draw bounding boxes around detected objects
-    for i in range(detections.shape[2]):
-        confidence = detections[0, 0, i, 2]
-        if confidence > 0.5:  # Confidence threshold
-            box = detections[0, 0, i, 3:7] * [image.shape[1], image.shape[0], image.shape[1], image.shape[0]]
-            (startX, startY, endX, endY) = box.astype("int")
-            cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
-
-    # Display the image with detected objects
-    cv2.imshow("Detected Objects", image)
+# Function to perform face detection on an image
+def detect_faces(image):
+    # Convert the image to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Perform face detection
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
+    # Draw bounding boxes around detected faces
+    for (x, y, w, h) in faces:
+        cv2.rectangle(image, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        
+    # Display the image with detected faces
+    cv2.imshow('Detected Faces', image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -38,7 +30,7 @@ def choose_option():
         if image is None:
             print("Error: Unable to read image file.")
             return
-        detect_objects(image)
+        detect_faces(image)
     elif option == '2':
         # Open webcam
         cap = cv2.VideoCapture(0)
@@ -50,7 +42,7 @@ def choose_option():
             if not ret:
                 print("Error: Unable to capture frame.")
                 break
-            detect_objects(frame)
+            detect_faces(frame)
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
                 break
